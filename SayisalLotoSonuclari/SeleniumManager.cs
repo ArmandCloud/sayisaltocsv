@@ -49,7 +49,7 @@ namespace SayisalLotoSonuclari
             if (difference == 0)
             {
                 Console.WriteLine("File is up to date.");
-                googleDriveManager.LoadFileId();
+                //googleDriveManager.LoadFileId();
                 return;
             }
             else if (difference > 0)

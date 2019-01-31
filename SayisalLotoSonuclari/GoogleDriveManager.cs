@@ -13,7 +13,7 @@ namespace SayisalLotoSonuclari
     class GoogleDriveManager
     {
         StringBuilder stringBuilder = new StringBuilder();
-        readonly string startupPath = Environment.CurrentDirectory;
+        readonly string startupPath = AppDomain.CurrentDomain.BaseDirectory;
         static string fileName = "sonuclar.csv";
         string saveFile = "save.csv";
         string saveFilePath = "";
@@ -25,8 +25,12 @@ namespace SayisalLotoSonuclari
         public GoogleDriveManager()
         {
             Console.WriteLine(startupPath);
-            localFilePath = startupPath + @"\" + fileName;
-            saveFilePath = startupPath + @"\" + saveFile;
+            localFilePath =Path.Combine( startupPath , fileName);
+            localFilePath = Directory.GetParent(localFilePath).FullName;
+            localFilePath = Directory.GetParent(localFilePath).FullName;
+            localFilePath = Directory.GetParent(localFilePath).FullName;
+            saveFilePath = Path.Combine(localFilePath, saveFile);
+            localFilePath = Path.Combine(localFilePath, fileName);          
             Console.WriteLine(localFilePath);
            
 
