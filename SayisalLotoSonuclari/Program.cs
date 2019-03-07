@@ -1,3 +1,5 @@
+using System;
+
 namespace SayisalLotoSonuclari
 {
     class Program
@@ -9,6 +11,9 @@ namespace SayisalLotoSonuclari
 
             // Go to http://aka.ms/dotnet-get-started-console to continue learning how to build a console app! 
             SeleniumManager seleniumManager = new SeleniumManager();
+            //FileOperations fileOperations = new FileOperations();
+           // fileOperations.ConvertCsvToJason();
+           // Console.ReadLine();
         }
     }
 }

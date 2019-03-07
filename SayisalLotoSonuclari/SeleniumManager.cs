@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
+using Newtonsoft.Json;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 using OpenQA.Selenium.Support.UI;
@@ -12,7 +13,7 @@ namespace SayisalLotoSonuclari
     class SeleniumManager
     {
         IWebDriver driver;
-        GoogleDriveManager googleDriveManager;
+        FileOperations fileManager;
         public SeleniumManager()
         {
             InitializeSelenium();
@@ -21,7 +22,7 @@ namespace SayisalLotoSonuclari
         {
             driver = new ChromeDriver();
             driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(10);
-            googleDriveManager = new GoogleDriveManager();
+            fileManager = new FileOperations();
             Thread.Sleep(1000);
             RetriveNumbers();
 
@@ -49,7 +50,6 @@ namespace SayisalLotoSonuclari
             if (difference == 0)
             {
                 Console.WriteLine("File is up to date.");
-                //googleDriveManager.LoadFileId();
                 return;
             }
             else if (difference > 0)
@@ -66,17 +66,21 @@ namespace SayisalLotoSonuclari
                         IsWeekChanged(sitede_gorunen_hafta);
                     }
                     data = GetCurrentWeekData(all_options_array[i].GetAttribute("value"));
+                    string result = JsonConvert.SerializeObject(GetCurrentWeekDataJson(all_options_array[i].GetAttribute("value")));
+                    fileManager.AddResultDataToJson(result);
                     Console.WriteLine(data);
-                    googleDriveManager.AddToCSV(data);
+                    fileManager.AddToCSV(data);
                 }
-                googleDriveManager.SaveCSVLocal(false);
+                fileManager.SaveCSVLocal(false);
+                //fileManager.SaveJsonLocal();
             }
             else
             {
                 Console.WriteLine("There is no file.");
                 string data = "";
+                string result = "";
+                Console.WriteLine(all_options_array.Length);
                 for (int i = 0; i < all_options_array.Length; i++)
-                //for (int i = 0; i < 5; i++)
                 {
                     if (i > 0)
                     {
@@ -85,11 +89,13 @@ namespace SayisalLotoSonuclari
                         IsWeekChanged(sitede_gorunen_hafta);
                     }
                     data = GetCurrentWeekData(all_options_array[i].GetAttribute("value"));
+                    result = JsonConvert.SerializeObject(GetCurrentWeekDataJson(all_options_array[i].GetAttribute("value")));
+                    fileManager.AddResultDataToJson(result);
                     Console.WriteLine(data);
-                    googleDriveManager.AddToCSV(data);
+                    fileManager.AddToCSV(data);
                 }
-                googleDriveManager.SaveCSVLocal(true);
-
+                fileManager.SaveCSVLocal(true);
+                fileManager.SaveJsonLocal(result);
             }
     
         }
@@ -106,6 +112,19 @@ namespace SayisalLotoSonuclari
             }
             return luckyNumbers;
 
+        }
+        private int[] GetLuckyNumbersArray()
+        {
+            int[] luckyNumbers = new int[6];
+            IWebElement numara_elementi = driver.FindElement(By.Id("sayisal-numaralar"));
+            IReadOnlyCollection<IWebElement> all_numbers = numara_elementi.FindElements(By.TagName("li"));
+            IWebElement[] all_numbers_array = new IWebElement[all_numbers.Count];
+            all_numbers_array = all_numbers.ToArray();
+            for (int i = 0; i < all_numbers_array.Length; i++)
+            {
+                luckyNumbers[i] = int.Parse(all_numbers_array[i].Text);
+            }
+            return luckyNumbers;
         }
         private string GetCurrentWeekData(string tarih)
         {
@@ -126,6 +145,34 @@ namespace SayisalLotoSonuclari
                 ",", dortBilen, ",", ucBilen, ",", altiBilenIkramiye, ",", besBilenIkramiye, ",", dortBilenIkramiye, ",", ucBilenIkramiye);
             return data;
         }
+        private ResultData GetCurrentWeekDataJson(string date)
+        {
+            ResultData resultData = new ResultData();
+            resultData.date = date;
+            string haftaNo = driver.FindElement(By.Id("sayisal-hafta")).Text;
+            resultData.week = int.Parse(haftaNo);
+            string ililce = driver.FindElement(By.Id("sayisal-buyukIkramiyeKazananIl")).Text;
+            resultData.location = ililce;
+            string altiBilen = driver.FindElement(By.Id("sayisal-bilenkisisayisi-6_BILEN")).Text;
+            resultData.prizeCounts[0] = altiBilen;
+            string altiBilenIkramiye = driver.FindElement(By.Id("sayisal-bilenkisikisibasidusenikramiye-6_BILEN")).Text;
+            resultData.prizes[0] = altiBilenIkramiye;
+            string besBilen = driver.FindElement(By.Id("sayisal-bilenkisisayisi-5_BILEN")).Text;
+            resultData.prizeCounts[1] = besBilen;
+            string besBilenIkramiye = driver.FindElement(By.Id("sayisal-bilenkisikisibasidusenikramiye-5_BILEN")).Text;
+            resultData.prizes[0] = besBilenIkramiye;
+            string dortBilen = driver.FindElement(By.Id("sayisal-bilenkisisayisi-4_BILEN")).Text;
+            resultData.prizeCounts[2] = dortBilen;
+            string dortBilenIkramiye = driver.FindElement(By.Id("sayisal-bilenkisikisibasidusenikramiye-4_BILEN")).Text;
+            resultData.prizes[0] = dortBilenIkramiye;
+            string ucBilen = driver.FindElement(By.Id("sayisal-bilenkisisayisi-3_BILEN")).Text;
+            resultData.prizeCounts[3] = ucBilen;
+            string ucBilenIkramiye = driver.FindElement(By.Id("sayisal-bilenkisikisibasidusenikramiye-3_BILEN")).Text;
+            resultData.prizes[0] = ucBilenIkramiye;
+            // options tagı içindeki text
+            resultData.numbers = GetLuckyNumbersArray();
+            return resultData;
+        }
         public int WeeksToAdd()
         {
             int weekCount=0;
@@ -134,9 +181,9 @@ namespace SayisalLotoSonuclari
         }
         public int CompareWeekFromFile(int currentWeek)
         {
-            if (File.Exists(GoogleDriveManager.localFilePath))
+            if (File.Exists(FileOperations.localFilePath))
             {
-                StreamReader reader = new StreamReader(GoogleDriveManager.localFilePath);
+                StreamReader reader = new StreamReader(FileOperations.localFilePath);
                 int tempWeek = 0;
                 while (!reader.EndOfStream)
                 {
