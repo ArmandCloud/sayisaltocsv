@@ -53,7 +53,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ResultData.cs" />
-    <Compile Include="FireBaseManager.cs" />
     <Compile Include="FileOperations.cs" />
     <Compile Include="SeleniumManager.cs" />
     <Compile Include="Program.cs" />
