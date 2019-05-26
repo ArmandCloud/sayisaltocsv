@@ -25,7 +25,6 @@ namespace SayisalLotoSonuclari
             fileManager = new FileOperations();
             Thread.Sleep(1000);
             RetriveNumbers();
-
         }
         public void RetriveNumbers()
         {
